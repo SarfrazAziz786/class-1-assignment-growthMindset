@@ -49,7 +49,7 @@ if uploaded_files:
         
         
         
-        # Show a preview of the dataframe..
+        # Show a preview of the dataframe.
         
         st.write("Preview the head of the Dataframe")
         st.dataframe(df.head())
