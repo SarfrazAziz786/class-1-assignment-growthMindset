@@ -2,37 +2,79 @@ import streamlit as st
 import pandas as pd
 import os
 from io import BytesIO
-
+from PIL import Image
 
 #set up our App
 st.set_page_config(page_title= "⁜Data sweeper", layout='wide')
 
 #Custom css
-st.markdown(
-    """
+dark_mode = """
+
     <style>
     .stApp{
-        background-color:black;
+        background-color:gold;
         color:white;
         }
     </style>
         """,
-        unsafe_allow_html=True
-    
-)
+st.markdown(dark_mode, unsafe_allow_html=True)
 
 #title and description
 st.title("Datasweeper Sterling Integrator by Sarfraz Aziz")
-st.write("Transform your files between CSV and EXCEL formats with built in data. Creating the project for quarter 3 GIAIC")
+st.write("Transform your files between CSV and EXCEL , JPEG or JPG and PDF formats  with built in data. Creating the project for quarter 3 GIAIC")
+
 
 #file uploader
 
-uploaded_files=st.file_uploader("Upload your file (csv or excel):", type=["CSV","XLSX"],accept_multiple_files=(True))
-                                                                          
+uploaded_files = st.file_uploader("Upload your file (csv or excel):", type=["CSV","XLSX"],accept_multiple_files=(True))
+
+#Image file upload
+uploaded_images = st.file_uploader("Upload JPEG or JPG Image", type = ["jpeg", "jpg"], accept_multiple_files=True)
+
+
+#Convert image to PDF
+if uploaded_images is not None:
+        if st.button("Convert Images to PDF"):
+            #Create an empty list to hold the images
+            image_list = [] 
+
+            #Loop through the uploaded images
+            for uploaded_image in uploaded_images:
+                
+                #Open the images using PIL library
+                image = Image.open(uploaded_image)
+                
+                #Convert image to RGB if it's not in RGB format (for PDF compatibility)
+                if image.mode != "RGB":
+                    image = image.convert('RGB')
+                image_list.append(image)
+
+                if image_list:
+
+                    #Create a ByteIO buffer to save the PDF
+                    pdf_buffer = BytesIO()
+
+                    #save the images as PDF
+                    image_list[0].save(pdf_buffer, format="PDF", save_all = True, append_images = image_list[1:])
+                    pdf_buffer.seek(0)
+
+                    st.download_button("Download PDF",
+                    data = pdf_buffer,
+                    filename="converted_images.pdf",
+                    mime="application/pdf"
+                    )
+                else:
+                    st.error("No valid images found")
+                  
+
+
+
+
 if uploaded_files:
       # Loop through each uploaded file
     for file in uploaded_files:
-        file_ext= os.path.splitext(file.name)[-1].lower()
+        file_ext = os.path.splitext(file.name)[-1].lower()
+        
         # Read file based on extension
         if file_ext == ".csv":
             df = pd.read_csv(file)
@@ -101,14 +143,20 @@ if uploaded_files:
         Buffer.seek(0)
 
         # Download Button
+        
         st.download_button(
-                label = f"⬇️ Download {file.name} as {conversion_type}",
-                data=Buffer,
-                filename=file_name,
-                mime=mime_type
-            )
+                label=f"⬇️ Download {file.name} as {conversion_type}",
+                data = Buffer,
+                filename = file.name.replace(file_ext, f".{conversion_type.lower()}"),
+                mime = mime_type
+        )
+        
+    
+    
+    
 
-st.success("🎉All files processed successfully")
+    st.success("🎉All files processed successfully")
+
 
 
 
