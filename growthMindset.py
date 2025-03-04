@@ -20,7 +20,7 @@ dark_mode = """
 st.markdown(dark_mode, unsafe_allow_html=True)
 
 #title and description
-st.title("Datasweeper Sterling Integrator by Sarfraz Aziz")
+st.title("File Converter and Cleaner by Sarfraz Aziz")
 st.write("Transform your files between CSV and EXCEL , JPEG or JPG and PDF formats  with built in data. Creating the project for quarter 3 GIAIC")
 
 
@@ -60,7 +60,7 @@ if uploaded_images is not None:
 
                     st.download_button("Download PDF",
                     data = pdf_buffer,
-                    filename="converted_images.pdf",
+                    file_name="converted_images.pdf",
                     mime="application/pdf"
                     )
                 else:
@@ -130,25 +130,26 @@ if uploaded_files:
     conversion_type = st.radio(f"Convert {file.name} to:", ["CSV","EXCEL"], key=file.name)
 
     if st.button(f"Convert {file.name}"):
-        Buffer=BytesIO()
+        buffer=BytesIO()
         if conversion_type == "CSV":
-            df.to_csv(Buffer, index=False)
+            df.to_csv(buffer, index=False)
             file_name = file.name.replace(file_ext, ".csv")
             mime_type="text/csv"
 
         elif conversion_type == "EXCEL":
-            df.to_excel(Buffer, index=False)
+            df.to_excel(buffer, index=False)
             file_name = file.name.replace(file_ext,".xlsx")
             mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        Buffer.seek(0)
+        buffer.seek(0)
+
 
         # Download Button
         
         st.download_button(
-                label=f"⬇️ Download {file.name} as {conversion_type}",
-                data = Buffer,
-                filename = file.name.replace(file_ext, f".{conversion_type.lower()}"),
-                mime = mime_type
+        label=f"⬇️ Download {file.name} as {conversion_type}",
+        data=buffer,
+        file_name=file.name.replace(file_ext, f".{conversion_type.lower()}"),
+        mime=mime_type
         )
         
     
