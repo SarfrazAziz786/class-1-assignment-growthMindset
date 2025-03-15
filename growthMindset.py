@@ -1,23 +1,23 @@
-import streamlit as st
-import pandas as pd
-import os
-from io import BytesIO
-from PIL import Image
+import streamlit as st  
+import pandas as pd #handling data in csv and excel
+import os #for file handling
+from io import BytesIO #for file conversation in memory
+from PIL import Image #for image handling
 
 #set up our App
 st.set_page_config(page_title= "⁜Data sweeper", layout='wide')
 
 #Custom css
 dark_mode = """
-
     <style>
     .stApp{
         background-color:gold;
         color:white;
         }
     </style>
-        """,
+"""
 st.markdown(dark_mode, unsafe_allow_html=True)
+
 
 #title and description
 st.title("File Converter and Cleaner by Sarfraz Aziz")
@@ -26,74 +26,61 @@ st.write("Transform your files between CSV and EXCEL , JPEG or JPG and PDF forma
 
 #file uploader
 
-uploaded_files = st.file_uploader("Upload your file (csv or excel):", type=["CSV","XLSX"],accept_multiple_files=(True))
+uploaded_files = st.file_uploader("Upload your file (csv or excel):", type=["csv", "xlsx"],accept_multiple_files=(True))
 
 #Image file upload
 uploaded_images = st.file_uploader("Upload JPEG or JPG Image", type = ["jpeg", "jpg"], accept_multiple_files=True)
 
 
 #Convert image to PDF
-if uploaded_images is not None:
-        if st.button("Convert Images to PDF"):
-            #Create an empty list to hold the images
-            image_list = [] 
+if uploaded_images:
+    if st.button("Convert Images to PDF"):
+        image_list = []  # Store images for PDF conversion
 
-            #Loop through the uploaded images
-            for uploaded_image in uploaded_images:
-                
-                #Open the images using PIL library
-                image = Image.open(uploaded_image)
-                
-                #Convert image to RGB if it's not in RGB format (for PDF compatibility)
-                if image.mode != "RGB":
-                    image = image.convert('RGB')
-                image_list.append(image)
+        for uploaded_image in uploaded_images:
+            image = Image.open(uploaded_image)
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+            image_list.append(image)
 
-                if image_list:
+        if image_list:
+            pdf_buffer = BytesIO()
+            image_list[0].save(
+                pdf_buffer, format="PDF", save_all=True, append_images=image_list[1:]
+            )
+            pdf_buffer.seek(0)
 
-                    #Create a ByteIO buffer to save the PDF
-                    pdf_buffer = BytesIO()
-
-                    #save the images as PDF
-                    image_list[0].save(pdf_buffer, format="PDF", save_all = True, append_images = image_list[1:])
-                    pdf_buffer.seek(0)
-
-                    st.download_button("Download PDF",
-                    data = pdf_buffer,
-                    file_name="converted_images.pdf",
-                    mime="application/pdf"
-                    )
-                else:
-                    st.error("No valid images found")
-                  
+            st.download_button(
+                "Download PDF",
+                data=pdf_buffer,
+                file_name="converted_images.pdf",
+                mime="application/pdf"
+            )
+        else:
+            st.error("No valid images found")                  
 
 
 
 
 if uploaded_files:
-      # Loop through each uploaded file
     for file in uploaded_files:
         file_ext = os.path.splitext(file.name)[-1].lower()
-        
+
         # Read file based on extension
         if file_ext == ".csv":
             df = pd.read_csv(file)
         elif file_ext == ".xlsx":
             df = pd.read_excel(file)
         else:
-            st.error(f"unsupported file type: {file_ext}")
+            st.error(f"Unsupported file type: {file_ext}")
             continue
 
-        
-        #Display info about the file
-        st.write(f"**File Name:** {file.name}" )
-        st.write(f"**File Size:** {file.size/1024}" )
-        
-        
-        
-        # Show a preview of the dataframe.
-        
-        st.write("Preview the head of the Dataframe")
+        # Display file details
+        st.write(f"**File Name:** {file.name}")
+        st.write(f"**File Size:** {file.size / 1024:.2f} KB")  # Added KB format
+
+        # Show a preview of the dataframe
+        st.write("Preview of DataFrame:")
         st.dataframe(df.head())
 
 
@@ -109,16 +96,19 @@ if uploaded_files:
 
             with col2:
                 if st.button(f"File missing values for {file.name}"):
-                    numuric_cols = df.select_dtypes(include=['number']).columns
-                    df[numuric_cols] = df[numuric_cols].fillna(df[numuric_cols].mean())
+                    numeric_cols = df.select_dtypes(include=['number']).columns
+                    df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].mean())
                     st.write("Missing values have been filled!")
 
 
     #Choose Specific Columns to Keep or Convert
-    st.subheader("🎯Select Columns to Convert ")
-    columns = st.multiselect(f"Choose columns for {file.name}", df.columns.tolist() , default = df.columns.tolist())
-    df = df[columns]
-
+            st.subheader("🎯 Select Columns to Keep")
+        selected_columns = st.multiselect(
+            f"Choose columns for {file.name}",
+            df.columns.tolist(),
+            default=df.columns.tolist()
+        )
+        df = df[selected_columns]
 
     #Data Visualization
     st.subheader("🔍Data Visualization")
